@@ -7,10 +7,13 @@ router.get('/',(req,res) => {
     res.render("employee/addOrEdit",{
         viewTitle : "Insert Employee"
     });
-})
+});
 
 router.post('/',(req,res) => {
-      insertRecord(req,res);
+    if(req.body._id =='')
+      insertRecord(req,res);//insertion
+    else
+      updateRecord(req,res);//updating
 });
 
 
@@ -41,9 +44,43 @@ router.post('/',(req,res) => {
    });
 }
 
+
+//updating
+function updateRecord(req,res){
+    Employee.findOneAndUpdate({_id: req.body._id}, req.body, {new: true},(err,docs) => {
+        if(!err) { res.redirect('employee/list');}
+        else{
+            if(err.name == 'ValidationError'){
+                handleValidationError(err,req.body);
+                res.render("employee/addOrEdit",{
+                    viewTitle: 'Update Employee',
+                    employee: req.body
+                })
+            }
+
+            else{
+                console.log('Error during record update: '+err);
+            }
+
+        }
+    });
+}
+
 //Next page after submitting 
 router.get('/list',(req,res) => {
-    res.json('from list');
+    
+    Employee.find((err,docs) => {
+          if(!err){
+              res.render("employee/list",{
+                  list : docs
+              });
+          }
+          
+          else{
+              console.log('Error in retrieving employee list:'+err);
+
+          }
+    });
 });
 
 
@@ -63,4 +100,34 @@ function handleValidationError(err,body){
         }
     }
 }
+
+
+
+router.get('/:id',(req,res) => {
+    Employee.findById(req.params.id,(err,doc) =>{
+         if(!err) {
+             res.render("employee/addOrEdit",{
+              viewTitle:"Update Employee",
+              employee: doc
+             });
+         }
+         
+ 
+    });
+});
+
+//delete function
+router.get('/delete/:id',(req,res) => {
+   Employee.findByIdAndRemove(req.params.id,(err,docs) => {
+      if(!err){
+          res.redirect('/employee/list');
+      }  
+
+      else{
+          console.log('Error in employee delete:'+err);
+      }
+
+   });
+});
+
 module.exports = router;
